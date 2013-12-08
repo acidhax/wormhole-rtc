@@ -13,7 +13,7 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 		video: this.enableWebcam
 	};
 	navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
-		// 
+		self.addStream(mediaStream);
 	}, function (err) {
 		// 
 	});
@@ -52,7 +52,11 @@ wormholeRTC.prototype.createOffer = function(id, channel, cb) {
 	}, 30000);
 	this.peerTransports[id] = connect.createDataChannel(channel);
 	this.peerTransports[id].onopen = function () {
-		self.wormholePeers[id] = new wormholePeer(id, channel, self.peerTransports[id], self.rtcFunctions);
+		if (!self.wormholePeers[id]) {
+			self.wormholePeers[id] = new wormholePeer(id, channel);
+		}
+		self.wormholePeers[id].setRTCFunctions(self.rtcFunctions);
+		self.wormholePeers[id].setTransport(self.peerTransports[id]);
 		self.wormholePeers[id].setPeer(self.peers[id]);
 		self.emit("rtcConnection", self.wormholePeers[id]);
 	};
@@ -81,9 +85,13 @@ wormholeRTC.prototype.createConnection = function(id) {
 	}, { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true}] });
 	this.peers[id].ondatachannel = function (ev) {
 		self.peerTransports[id] = ev.channel;
-		self.wormholePeers[id] = new wormholePeer(id, ev.channel.label, self.peerTransports[id], self.rtcFunctions);
-		self.wormholePeers[id].setPeer(self.peers[id]);
+		if (!self.wormholePeers[id]) {
+			self.wormholePeers[id] = new wormholePeer(id, ev.channel.label);
+		}
 		ev.channel.onopen = function () {
+			self.wormholePeers[id].setRTCFunctions(self.rtcFunctions);
+			self.wormholePeers[id].setTransport(self.peerTransports[id]);
+			self.wormholePeers[id].setPeer(self.peers[id]);
 			self.emit("rtcConnection", self.wormholePeers[id]);
 		}
 		ev.channel.onclose = function () {
@@ -162,17 +170,28 @@ wormholeRTC.prototype.getPeer = function(id) {
 	return this.wormholePeers[id];
 };
 
-var wormholePeer = function (id, datachannel, transport, rtcFunctions) {
+var wormholePeer = function (id, datachannel) {
 	EventEmitter.EventEmitter.call(this);
-
 	var self = this;
 	this.id = id;
 	this.channel = datachannel;
-	this.transport = transport;
 	this.rtc = {};
-	this.syncRtc(rtcFunctions);
-	this.rtcFunctions = rtcFunctions;
 	this.uuidList = {};
+};
+
+wormholePeer.prototype = Object.create(EventEmitter.EventEmitter.prototype);
+
+wormholePeer.prototype.setPeer = function(peer) {
+	this.peer = peer;
+};
+
+wormholePeer.prototype.setRTCFunctions = function(rtcFunctions) {
+	this.rtcFunctions = rtcFunctions;
+	this.syncRtc(rtcFunctions);
+};
+
+wormholePeer.prototype.setTransport = function(transport) {
+	this.transport = transport;
 	transport.onmessage = function (ev) {
 		var data = JSON.parse(ev.data);
 		if (data.rtc) {
@@ -193,12 +212,6 @@ var wormholePeer = function (id, datachannel, transport, rtcFunctions) {
 			}
 		}
 	};
-};
-
-wormholePeer.prototype = Object.create(EventEmitter.EventEmitter.prototype);
-
-wormholePeer.prototype.setPeer = function(peer) {
-	this.peer = peer;
 };
 
 wormholePeer.prototype.muteAudio = function () {
