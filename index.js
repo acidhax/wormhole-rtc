@@ -218,9 +218,8 @@ wormholePeer.prototype.muteLocalVideo = function () {
 };
 
 wormholePeer.prototype.renegotiate = function (mic, webcam) {
-	this.rtc.createOffer(this.id, this.channel);
-
-	// Create peer:
+	var self = this;
+	// Create peer: 
 	var video;
 	var MediaConstraints = {
 		audio: mic,
@@ -228,11 +227,12 @@ wormholePeer.prototype.renegotiate = function (mic, webcam) {
 		screen: false
 	};
 	navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
-		this.peer.addStream(mediaStream);
+		self.peer.addStream(mediaStream);
 		if (webcam) {
 			video = document.createElement("video");
 			video.src = window.URL.createObjectURL(mediaStream);
 		}
+		self.rtc.createOffer(self.id, self.channel);
 	}, function (err) {
 		// 
 	});
