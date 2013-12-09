@@ -59,7 +59,7 @@ wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstr
 		ondatachannel && ondatachannel(ev);
 	};
 	peer.onicecandidate = function (ev) {
-		onicecandidate && onicecandidate(ev.candidate);
+		onicecandidate && onicecandidate(ev);
 	};
 	peer.onaddstream = function (mediaStream) {
 		onaddstream && onaddstream(mediaStream);
@@ -108,28 +108,12 @@ wormholeRTC.prototype.createOffer = function(id, channel, cb) {
 		}
 	}, 30000);
 	this.peerTransports[id] = connect.createDataChannel(channel);
-	this.peerTransports[id].onopen = function () {
-		if (!self.wormholePeers[id]) {
-			self.wormholePeers[id] = new wormholePeer(id, channel);
-		}
-		self.wormholePeers[id].setRTCFunctions(self.rtcFunctions);
-		self.wormholePeers[id].setTransport(self.peerTransports[id]);
-		self.wormholePeers[id].setPeer(self.peers[id]);
-		self.emit("rtcConnection", self.wormholePeers[id]);
-	};
 	this.peerTransports[id].onclose = function () {
 		self.emit("rtcDisonnection", self.wormholePeers[id]);
 	};
-	connect.createOffer(
-		function(desc) {
-			_offerDescription = desc;
-			connect.setLocalDescription(desc);
-			cb(desc);
-		},
-		function() {
-			// console.log(arguments);
-		}
-	);
+	wormholeRTC.createOffer(connect, function (desc) {
+		cb(desc);
+	});
 };
 
 wormholeRTC.prototype.handleOffer = function(id, offerDescription, cb) {
