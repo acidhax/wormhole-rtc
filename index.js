@@ -18,13 +18,13 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 		// 
 	});
 	this.addRTCFunction("handleOffer", function (id, offerDescription, cb) {
-		this.handleOffer(id, offerDescription, cb);
+		self.handleOffer(id, offerDescription, cb);
 	});
 	this.addRTCFunction("handleAnswer", function (id, answerDescription) {
-		this.handleAnswer(id, answerDescription);
+		self.handleAnswer(id, answerDescription);
 	});
 	this.addRTCFunction("addIceCandidate", function (candidate) {
-		this.handleIceCandidate(this.id, candidate);
+		self.handleIceCandidate(this.id, candidate);
 	});
 };
 
