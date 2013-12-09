@@ -34,9 +34,66 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 
 wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
 
+wormholeRTC.createOffer = function (peer, cb) {
+	peer.createOffer(
+		function(desc) {
+			_offerDescription = desc;
+			peer.setLocalDescription(desc);
+			cb(desc);
+		},
+		function() {
+			// console.log(arguments);
+		}
+	);
+};
+
+wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstream) {
+	var peer = new webkitRTCPeerConnection({
+		iceServers: [
+			{ url: "stun:stun.l.google.com:19302" },
+			{ url: 'turn:asdf@ec2-54-227-128-105.compute-1.amazonaws.com:3479', credential:'asdf' }
+		]
+	}, { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true}] });
+
+	peer.ondatachannel = function (ev) {
+		ondatachannel && ondatachannel(ev);
+	};
+	peer.onicecandidate = function (ev) {
+		onicecandidate && onicecandidate(ev.candidate);
+	};
+	peer.onaddstream = function (mediaStream) {
+		onaddstream && onaddstream(mediaStream);
+	};
+	return peer;
+};
+
 wormholeRTC.prototype.addRTCFunction = function(key, func) {
 	var self = this;
 	this.rtcFunctions[key] = func;
+};
+
+wormholeRTC.prototype.createConnection = function(id) {
+	var self = this;
+	this.peers[id] = wormholeRTC.createConnection(function (ev) {
+		self.peerTransports[id] = ev.channel;
+		if (!self.wormholePeers[id]) {
+			self.wormholePeers[id] = new wormholePeer(id, ev.channel.label);
+		}
+		ev.channel.onopen = function () {
+			self.wormholePeers[id].setRTCFunctions(self.rtcFunctions);
+			self.wormholePeers[id].setTransport(self.peerTransports[id]);
+			self.wormholePeers[id].setPeer(self.peers[id]);
+			self.emit("rtcConnection", self.wormholePeers[id]);
+		}
+		ev.channel.onclose = function () {
+			self.emit("rtcDisonnection", self.wormholePeers[id]);
+		}
+	}, function (event) {
+		self.emit("addIceCandidate", id, event.candidate);
+	}, function(mediaStream) {
+		// TODO: video.src = webkitURL.createObjectURL(mediaStream);
+    })
+	return this.peers[id];
 };
 
 wormholeRTC.prototype.createOffer = function(id, channel, cb) {
@@ -73,38 +130,6 @@ wormholeRTC.prototype.createOffer = function(id, channel, cb) {
 			// console.log(arguments);
 		}
 	);
-};
-
-wormholeRTC.prototype.createConnection = function(id) {
-	var self = this;
-	this.peers[id] = new webkitRTCPeerConnection({
-		iceServers: [
-			{ url: "stun:stun.l.google.com:19302" },
-			{ url: 'turn:asdf@ec2-54-227-128-105.compute-1.amazonaws.com:3479', credential:'asdf' }
-		]
-	}, { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true}] });
-	this.peers[id].ondatachannel = function (ev) {
-		self.peerTransports[id] = ev.channel;
-		if (!self.wormholePeers[id]) {
-			self.wormholePeers[id] = new wormholePeer(id, ev.channel.label);
-		}
-		ev.channel.onopen = function () {
-			self.wormholePeers[id].setRTCFunctions(self.rtcFunctions);
-			self.wormholePeers[id].setTransport(self.peerTransports[id]);
-			self.wormholePeers[id].setPeer(self.peers[id]);
-			self.emit("rtcConnection", self.wormholePeers[id]);
-		}
-		ev.channel.onclose = function () {
-			self.emit("rtcDisonnection", self.wormholePeers[id]);
-		}
-	};
-	this.peers[id].onicecandidate = function (event) {
-		self.emit("addIceCandidate", id, event.candidate);
-	};
-	this.peers[id].onaddstream = function(mediaStream) {
-		// TODO: video.src = webkitURL.createObjectURL(mediaStream);
-    };
-	return this.peers[id];
 };
 
 wormholeRTC.prototype.handleOffer = function(id, offerDescription, cb) {
