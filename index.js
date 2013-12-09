@@ -23,8 +23,8 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 	this.addRTCFunction("handleAnswer", function (id, answerDescription) {
 		this.handleAnswer(id, answerDescription);
 	});
-	this.addRTCFunction("addIceCandidate", function (id, candidate) {
-		this.handleIceCandidate(id, candidate);
+	this.addRTCFunction("addIceCandidate", function (candidate) {
+		this.handleIceCandidate(this.id, candidate);
 	});
 };
 
@@ -67,12 +67,16 @@ wormholeRTC.prototype.createConnection = function(id) {
 			self.wormholePeers[id].setRTCFunctions(self.rtcFunctions);
 			self.wormholePeers[id].setTransport(self.peerTransports[id]);
 			self.wormholePeers[id].setPeer(self.peers[id]);
+			self.wormholePeers[id].renegotiating = false;
 			self.emit("rtcConnection", self.wormholePeers[id]);
 		}
 		ev.channel.onclose = function () {
 			self.emit("rtcDisonnection", self.wormholePeers[id]);
 		}
 	}, function (event) {
+		if (self.wormholePeers[id].renegotiating) {
+			self.wormholePeers[id].rtc.addIceCandidate(event.candidate);
+		}
 		self.emit("addIceCandidate", id, event.candidate);
 	}, function(mediaStream) {
 		// TODO: video.src = webkitURL.createObjectURL(mediaStream);
@@ -183,10 +187,11 @@ var wormholePeer = function (id, datachannel, controller) {
 	EventEmitter.EventEmitter.call(this);
 	var self = this;
 	this.id = id;
-	this.channel = datachannel;
+	this.channel = datachannel || "TEMPCHANNELNAME";
 	this.controller = controller;
 	this.rtc = {};
 	this.uuidList = {};
+	this.renegotiating = false;
 };
 
 wormholePeer.prototype = Object.create(EventEmitter.EventEmitter.prototype);
@@ -243,6 +248,7 @@ wormholePeer.prototype.muteLocalVideo = function () {
 wormholePeer.prototype.renegotiate = function (mic, webcam) {
 	// Create peer
 	var self = this;
+	self.renegotiating = true;
 	var oldPeer = self.peer;
 	var video;
 	var MediaConstraints = {
