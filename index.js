@@ -34,17 +34,10 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 
 wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
 
-wormholeRTC.createOffer = function (peer, cb) {
-	peer.createOffer(
-		function(desc) {
-			_offerDescription = desc;
-			peer.setLocalDescription(desc);
-			cb(desc);
-		},
-		function() {
-			// console.log(arguments);
-		}
-	);
+
+wormholeRTC.prototype.addRTCFunction = function(key, func) {
+	var self = this;
+	this.rtcFunctions[key] = func;
 };
 
 wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstream) {
@@ -65,11 +58,6 @@ wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstr
 		onaddstream && onaddstream(mediaStream);
 	};
 	return peer;
-};
-
-wormholeRTC.prototype.addRTCFunction = function(key, func) {
-	var self = this;
-	this.rtcFunctions[key] = func;
 };
 
 wormholeRTC.prototype.createConnection = function(id) {
@@ -94,6 +82,19 @@ wormholeRTC.prototype.createConnection = function(id) {
 		// TODO: video.src = webkitURL.createObjectURL(mediaStream);
     })
 	return this.peers[id];
+};
+
+wormholeRTC.createOffer = function (peer, cb) {
+	peer.createOffer(
+		function(desc) {
+			_offerDescription = desc;
+			peer.setLocalDescription(desc);
+			cb(desc);
+		},
+		function() {
+			// console.log(arguments);
+		}
+	);
 };
 
 wormholeRTC.prototype.createOffer = function(id, channel, cb) {
