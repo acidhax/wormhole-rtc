@@ -17,11 +17,11 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 	}, function (err) {
 		// 
 	});
-	this.addRTCFunction("handleOffer", function (id, offerDescription, cb) {
-		self.handleOffer(id, offerDescription, cb);
+	this.addRTCFunction("handleOffer", function (offerDescription, cb) {
+		self.handleOffer(this.id, offerDescription, cb);
 	});
-	this.addRTCFunction("handleAnswer", function (id, answerDescription) {
-		self.handleAnswer(id, answerDescription);
+	this.addRTCFunction("handleAnswer", function (answerDescription) {
+		self.handleAnswer(this.id, answerDescription);
 	});
 	this.addRTCFunction("addIceCandidate", function (candidate) {
 		self.handleIceCandidate(this.id, candidate);
@@ -30,6 +30,27 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 
 wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
 
+wormholeRTC.prototype.attachWormhole = function(wh) {
+	var self = this;
+	this.wh = wh;
+	wh.on("createOffer", this.createOffer);
+	wh.on("handleOffer", this.handleOffer);
+	wh.on("handleAnswer", this.handleAnswer);
+	wh.on("handleLeave", this.handleLeave)
+	wh.on("handleIceCandidate", this.handleIceCandidate);
+	wormhole.prototype.message = function(id, channel) {
+		var args = [].slice.call(arguments);
+		args.shift();
+		args.shift();
+		if (self.channelMembers[channel][id] && this.wormholePeers[id]) {
+			// Use RTC
+			self.wormholePeers[id].rtc.message.apply(self, args);
+		} else {
+			// Use Socket.IO messaging.
+			this.rpc.message.apply(this, arguments);
+		}
+	};
+};
 
 wormholeRTC.prototype.addRTCFunction = function(key, func) {
 	var self = this;
@@ -263,7 +284,7 @@ wormholePeer.prototype.renegotiate = function (mic, webcam) {
 		}
 		self.controller.createOffer(self.id, self.channel, function (desc) {
 			self.peer.addStream(mediaStream);
-			self.rtc.handleOffer(self.id, desc, function (remoteDescription) {
+			self.rtc.handleOffer(desc, function (remoteDescription) {
 				self.controller.handleAnswer(self.id, remoteDescription);
 			});
 		});
