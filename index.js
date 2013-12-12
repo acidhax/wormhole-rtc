@@ -1,9 +1,12 @@
 var wormholeRTC = function (enableWebcam, enableAudio) {
+	var self = this;
 	EventEmitter.EventEmitter.call(this);
 	this.rtcFunctions = {};
 	this.peers = {};
 	this.peerTransports = {};
 	this.wormholePeers = {};
+
+	this.streams = [];
 
 	this.enableWebcam = enableWebcam || false;
 	this.enableAudio = enableAudio || false;
@@ -33,11 +36,21 @@ wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
 wormholeRTC.prototype.attachWormholeServer = function(wh) {
 	var self = this;
 	this.wh = wh;
-	wh.on("createOffer", this.createOffer);
-	wh.on("handleOffer", this.handleOffer);
-	wh.on("handleAnswer", this.handleAnswer);
-	wh.on("handleLeave", this.handleLeave)
-	wh.on("handleIceCandidate", this.handleIceCandidate);
+	wh.on("createOffer", function () {
+		self.createOffer.apply(self, arguments);
+	});
+	wh.on("handleOffer", function () {
+		self.handleOffer.apply(self, arguments);
+	});
+	wh.on("handleAnswer", function () {
+		self.handleAnswer.apply(self, arguments);
+	});
+	wh.on("handleLeave", function () {
+		self.handleLeave.apply(self, arguments);
+	});
+	wh.on("handleIceCandidate", function () {
+		self.handleIceCandidate.apply(self, arguments);
+	});
 	wormhole.prototype.message = function(id, channel) {
 		var args = [].slice.call(arguments);
 		args.shift();
@@ -49,6 +62,36 @@ wormholeRTC.prototype.attachWormholeServer = function(wh) {
 			// Use Socket.IO messaging.
 			this.rpc.message.apply(this, arguments);
 		}
+	};
+	wormhole.prototype.createConnection = function () {
+		return self.createConnection.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.createOffer = function () {
+		return self.createOffer.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.handleOffer = function () {
+		return self.handleOffer.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.handleTimeout = function () {
+		return self.handleTimeout.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.handleAnswer = function () {
+		return self.handleAnswer.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.handleIceCandidate = function () {
+		return self.handleIceCandidate.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.addStream = function () {
+		return self.addStream.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.handleLeave = function () {
+		return self.handleLeave.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.getPeers = function () {
+		return self.getPeers.apply(self, [].slice.call(arguments));
+	};
+	wormhole.prototype.getPeer = function () {
+		return self.getPeer.apply(self, [].slice.call(arguments));
 	};
 };
 
@@ -63,7 +106,7 @@ wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstr
 			{ url: "stun:stun.l.google.com:19302" },
 			{ url: 'turn:asdf@ec2-54-227-128-105.compute-1.amazonaws.com:3479', credential:'asdf' }
 		]
-	}, { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true}] });
+	}, { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'SctpDataChannels': true}] });
 
 	peer.ondatachannel = function (ev) {
 		ondatachannel && ondatachannel(ev);
@@ -95,10 +138,12 @@ wormholeRTC.prototype.createConnection = function(id) {
 			self.emit("rtcDisonnection", self.wormholePeers[id]);
 		}
 	}, function (event) {
-		if (self.wormholePeers[id].renegotiating) {
+		if (self.wormholePeers[id] && self.wormholePeers[id].renegotiating) {
 			self.wormholePeers[id].rtc.addIceCandidate(event.candidate);
+		} else {
+			self.wh.rpc.addIceCandidate(id, event.candidate);
+			self.emit("addIceCandidate", id, event.candidate);
 		}
-		self.emit("addIceCandidate", id, event.candidate);
 	}, function(mediaStream) {
 		// TODO: video.src = webkitURL.createObjectURL(mediaStream);
     });
@@ -113,13 +158,11 @@ wormholeRTC.createOffer = function (peer, cb) {
 			cb(desc);
 		},
 		function() {
-			// console.log(arguments);
 		}
 	);
 };
 
 wormholeRTC.prototype.createOffer = function(id, channel, cb) {
-	// console.log("Creating RTC offer for ID", id);
 	var _offerDescription;
 	var self = this;
 	var connect = this.createConnection(id);
@@ -130,6 +173,10 @@ wormholeRTC.prototype.createOffer = function(id, channel, cb) {
 		}
 	}, 30000);
 	this.peerTransports[id] = connect.createDataChannel(channel);
+
+	// self.wormholePeers[id] = new wormholePeer(id, channel, self);
+	self.peers[id].ondatachannel({channel: this.peerTransports[id]});
+
 	this.peerTransports[id].onclose = function () {
 		self.emit("rtcDisonnection", self.wormholePeers[id]);
 	};
@@ -137,22 +184,27 @@ wormholeRTC.prototype.createOffer = function(id, channel, cb) {
 		if (this.wormholePeers[id]) {
 			this.wormholePeers[id].setPeer(connect);
 		}
-		cb(desc);
-	});
+		cb(null, desc);
+	}.bind(self));
 };
 
 wormholeRTC.prototype.handleOffer = function(id, offerDescription, cb) {
-	// console.log("handleOffer RTC for ID", id, offerDescription);
 	if (id && offerDescription) {
 		var self = this;
 		var connect = this.createConnection(id);
+		setTimeout(function () {
+			if (connect.readyState == "connecting") {
+				// failed.
+				self.handleTimeout(id);
+			}
+		}, 30000);
 		var remoteDescription = new RTCSessionDescription(offerDescription);
 		connect.setRemoteDescription(remoteDescription);
 		connect.createAnswer(function (answer) {
 			connect.setLocalDescription(answer);
-			cb(answer);
+			cb(null, answer);
 		}, function (err) {
-			// 
+			cb("No answer", err);
 		});
 	}
 };
@@ -168,7 +220,6 @@ wormholeRTC.prototype.handleTimeout = function(id, channel) {
 };
 
 wormholeRTC.prototype.handleAnswer = function(id, answerDescription) {
-	// console.log("handleAnswer RTC for ID", id, answerDescription);
 	if (id && answerDescription) {
 		var connect = this.peers[id];
 		var remoteDescription = new RTCSessionDescription(answerDescription);
@@ -177,8 +228,7 @@ wormholeRTC.prototype.handleAnswer = function(id, answerDescription) {
 };
 
 wormholeRTC.prototype.handleIceCandidate = function(id, candidate) {
-	// console.log("handleIceCandidate RTC for ID", id, candidate);
-	if (id && candidate) {
+	if (id && candidate && this.peers[id]) {
 		this.peers[id].addIceCandidate(new RTCIceCandidate(candidate));
 	}
 };
@@ -240,9 +290,7 @@ wormholePeer.prototype.setTransport = function(transport) {
 			var func = self.uuidList[uuid];
 			if (func && typeof func === "function") {
 				// Remove function from uuidList.
-				// console.log("Removing CallbackID from UUIDLIST", uuid);
 				delete self.uuidList[uuid];
-				// console.log("CallbackID removed??", self.uuidList[uuid] != null);
 				// Execute function with arguments! Blama llama lamb! Blam alam alam
 				func.apply(self, params);
 			}
@@ -327,7 +375,6 @@ wormholePeer.prototype.executeRTCFunction = function(functionName, args, callbac
 		this.uuidList[out.uuid] = _callback;
 		setTimeout(function () {
 			if (self.uuidList[out.uuid]) {
-				// console.log("Timing out Callback", out.uuid);
 				try {
 					self.uuidList[out.uuid].call(self, "timeout");
 					delete self.uuidList[out.uuid];
@@ -335,7 +382,6 @@ wormholePeer.prototype.executeRTCFunction = function(functionName, args, callbac
 					delete self.uuidList[out.uuid];
 					throw ex;
 				}
-				// console.log("Deleting UUID from callback", out.uuid);
 			}
 		}, 30000);
 	}
