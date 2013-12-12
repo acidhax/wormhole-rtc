@@ -30,7 +30,7 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 
 wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
 
-wormholeRTC.prototype.attachWormhole = function(wh) {
+wormholeRTC.prototype.attachWormholeServer = function(wh) {
 	var self = this;
 	this.wh = wh;
 	wh.on("createOffer", this.createOffer);
@@ -163,7 +163,7 @@ wormholeRTC.prototype.handleTimeout = function(id, channel) {
 	delete this.peerTransports[id];
 	delete this.wormholePeers[id];
 
-	self.emit("timeout", id channel);
+	self.emit("timeout", id,  channel);
 	// self.rpc.reinitiateOffer(id, channel);
 };
 
