@@ -374,5 +374,5 @@ var __randomString = function() {
 
 
 // 
-wormholePeer.renegotiate(true, false);
+// wormholePeer.renegotiate(true, false);
 // --> wormholePeer.rtc.createOffer(id, channel, cb)
