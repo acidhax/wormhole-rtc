@@ -43,17 +43,11 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 
 wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
 
-wormholeRTC.prototype.stopAll = function() {
-	for (var i = 0; i < this.streams.length; i++) {
-		this.streams[i].stop();
-	}
-};
-
 wormholeRTC.prototype.enableWebcam = function() {
-	// this.stopAll();
+	this.MediaConstraints.video = true;
 };
 wormholeRTC.prototype.disableWebcam = function () {
-	// this.stopAll();
+	this.MediaConstraints.video = false;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		var vT = stream.getVideoTracks();
@@ -65,9 +59,10 @@ wormholeRTC.prototype.disableWebcam = function () {
 };
 
 wormholeRTC.prototype.enableMic = function() {
-	this.stopAll();
+	this.MediaConstraints.audio = true;
 };
 wormholeRTC.prototype.disableMic = function() {
+	this.MediaConstraints.audio = false;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		var aT = stream.getAudioTracks();
@@ -337,9 +332,11 @@ var wormholePeer = function (id, datachannel, controller) {
 	this.id = id;
 	this.channel = datachannel || "TEMPCHANNELNAME";
 	this.controller = controller;
+	this.renegotiating = false;
+
 	this.rtc = {};
 	this.uuidList = {};
-	this.renegotiating = false;
+	this.streams = [];
 };
 
 wormholePeer.prototype = Object.create(EventEmitter.EventEmitter.prototype);
@@ -408,6 +405,7 @@ wormholePeer.prototype.renegotiate = function (mic, webcam, screen) {
 			video = document.createElement("video");
 			video.src = window.URL.createObjectURL(mediaStream);
 		}
+		self.streams.push(mediaStream);
 		self.MediaConstraints = MediaConstraints;
 		reneg(mediaStream);
 	}, function (err) {
