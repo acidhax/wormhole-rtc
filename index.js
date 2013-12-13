@@ -409,12 +409,13 @@ wormholePeer.prototype.renegotiate = function (mic, webcam, screen) {
 			video.src = window.URL.createObjectURL(mediaStream);
 		}
 		self.MediaConstraints = MediaConstraints;
+		reneg(mediaStream);
 	}, function (err) {
 		self.MediaConstraints = {audio: false, video: false, screen: false};
 		reneg();
 	});
 
-	var reneg = function() {
+	var reneg = function(mediaStream) {
 		self.controller.createOffer(self.id, self.channel, function (err, desc) {
 			self.rtc.handleOffer(desc, function (err, remoteDescription) {
 				self.controller.handleAnswer(self.id, remoteDescription);
