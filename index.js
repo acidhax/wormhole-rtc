@@ -171,7 +171,7 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 	if (!this.wormholePeers[id] || !this.wormholePeers[id].renegotiating) {
 		if (!mediaStream) {
 			for (var i = 0; i < this.streams.length; i++) {
-				console.log("Adding stream", this.streams[i]);
+				console.log("Adding stream", this.streams[i], id);
 				this.peers[id].addStream(this.streams[i]);
 			}
 		} else {
@@ -347,7 +347,7 @@ wormholePeer.prototype.muteLocalVideo = function () {
 	// Video stream still continues, but doesn't decode/play.
 };
 
-wormholePeer.prototype.renegotiate = function (mic, webcam) {
+wormholePeer.prototype.renegotiate = function (mic, webcam, screen) {
 	// Create peer
 	var self = this;
 	self.renegotiating = true;
@@ -356,7 +356,7 @@ wormholePeer.prototype.renegotiate = function (mic, webcam) {
 	var MediaConstraints = {
 		audio: mic,
 		video: webcam,
-		screen: false
+		screen: screen
 	};
 	navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
 		if (webcam) {
