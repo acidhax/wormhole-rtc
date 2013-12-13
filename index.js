@@ -160,8 +160,13 @@ wormholeRTC.prototype.createConnection = function(id) {
 			self.emit("addIceCandidate", id, event.candidate);
 		}
 	}, function(mediaStream) {
+		console.log("Remote media stream for ID:", id);
+		cconsole.log("Remote media stream:", mediaStream);
 		// TODO: video.src = webkitURL.createObjectURL(mediaStream);
     });
+	for (var i = 0; i < this.streams.length; i++) {
+	    this.peers[id].addStream(this.streams[i]);
+	}
 	return this.peers[id];
 };
 
@@ -189,7 +194,6 @@ wormholeRTC.prototype.createOffer = function(id, channel, cb) {
 	}, 30000);
 	this.peerTransports[id] = connect.createDataChannel(channel);
 
-	// self.wormholePeers[id] = new wormholePeer(id, channel, self);
 	self.peers[id].ondatachannel({channel: this.peerTransports[id]});
 
 	this.peerTransports[id].onclose = function () {
