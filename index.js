@@ -7,6 +7,7 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 	this.wormholePeers = {};
 
 	this.streams = [];
+	this.callback = [];
 
 	this.enableWebcam = enableWebcam || false;
 	this.enableAudio = enableAudio || false;
@@ -17,6 +18,8 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 	};
 	navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
 		self.addStream(mediaStream);
+		self.ready();
+		self.emit("ready");
 	}, function (err) {
 		// 
 	});
@@ -32,7 +35,19 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 };
 
 wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
-
+wormholeRTC.prototype.ready = function (cb) {
+	if (cb) {
+		this.callback.push(cb);
+		if (this._readyFired) {
+			cb.call(this);
+		}
+	} else {
+		this._readyFired = true;
+		for (var i =0; i < this.callback.length; i++) {
+			this.callback[i].call(this);
+		}
+	}
+};
 wormholeRTC.prototype.attachWormholeServer = function(wh) {
 	var self = this;
 	this.wh = wh;
