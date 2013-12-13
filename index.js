@@ -1,4 +1,4 @@
-var wormholeRTC = function (enableWebcam, enableAudio) {
+var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	var self = this;
 	EventEmitter.EventEmitter.call(this);
 	this.rtcFunctions = {};
@@ -11,10 +11,12 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 
 	this.enableWebcam = enableWebcam || false;
 	this.enableAudio = enableAudio || false;
+	this.enableScreen = enableScreen || false;
 	
 	var MediaConstraints = {
 		audio: this.enableAudio,
-		video: this.enableWebcam
+		video: this.enableWebcam,
+		screen: this.enableScreen
 	};
 	navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
 		self.addStream(mediaStream);
@@ -37,6 +39,27 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 };
 
 wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
+
+wormholeRTC.prototype.stopAll = function() {
+	for (var i = 0; i < this.streams.length; i++) {
+		this.streams[i].stop();
+	}
+};
+
+wormholeRTC.prototype.enableWebcam = function() {
+	this.stopAll();
+};
+wormholeRTC.prototype.disableWebcam = function () {
+	this.stopAll();
+};
+
+wormholeRTC.prototype.enableMic = function() {
+	this.stopAll();
+};
+wormholeRTC.prototype.disableMic = function() {
+	this.stopAll();
+};
+
 wormholeRTC.prototype.ready = function (cb) {
 	if (cb) {
 		this.callback.push(cb);
@@ -139,6 +162,7 @@ wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstr
 
 wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 	var self = this;
+	console.log("wormholeRTC.prototype.createConnection", id);
 	this.peers[id] = wormholeRTC.createConnection(function (ev) {
 		self.peerTransports[id] = ev.channel;
 		if (!self.wormholePeers[id]) {
@@ -171,7 +195,6 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 	if (!this.wormholePeers[id] || !this.wormholePeers[id].renegotiating) {
 		if (!mediaStream) {
 			for (var i = 0; i < this.streams.length; i++) {
-				console.log("Adding stream", this.streams[i], id);
 				this.peers[id].addStream(this.streams[i]);
 			}
 		} else {
@@ -196,6 +219,7 @@ wormholeRTC.createOffer = function (peer, cb) {
 };
 
 wormholeRTC.prototype.createOffer = function(id, channel, cb, mediaStream) {
+	console.log("wormholeRTC.prototype.createOffer", id);
 	var _offerDescription;
 	var self = this;
 	var connect = this.createConnection(id, mediaStream);
@@ -221,6 +245,7 @@ wormholeRTC.prototype.createOffer = function(id, channel, cb, mediaStream) {
 };
 
 wormholeRTC.prototype.handleOffer = function(id, offerDescription, cb) {
+	console.log("wormholeRTC.prototype.handleOffer", id);
 	if (id && offerDescription) {
 		var self = this;
 		var connect = this.createConnection(id);
@@ -252,6 +277,7 @@ wormholeRTC.prototype.handleTimeout = function(id, channel) {
 };
 
 wormholeRTC.prototype.handleAnswer = function(id, answerDescription) {
+	console.log("wormholeRTC.prototype.handleAnswer", id);
 	if (id && answerDescription) {
 		var connect = this.peers[id];
 		var remoteDescription = new RTCSessionDescription(answerDescription);
@@ -364,7 +390,7 @@ wormholePeer.prototype.renegotiate = function (mic, webcam, screen) {
 			video.src = window.URL.createObjectURL(mediaStream);
 		}
 		self.controller.createOffer(self.id, self.channel, function (err, desc) {
-			self.rtc.handleOffer(desc, function (remoteDescription) {
+			self.rtc.handleOffer(desc, function (err, remoteDescription) {
 				self.controller.handleAnswer(self.id, remoteDescription);
 			});
 		}, mediaStream);
