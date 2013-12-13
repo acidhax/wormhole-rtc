@@ -54,13 +54,26 @@ wormholeRTC.splitStreams = function (mediaStream) {
 	for (var i = 0; i < vT.length; i++) {
 		videoStream.addTrack(vT[i]);
 	}
-	
+
 	var aT = mediaStream.getAudioTracks();
 	for (var i = 0; i < vT.length; i++) {
 		audioStream.addTrack(vT[i]);
 	}
 
 	return [audioStream, videoStream];
+};
+wormholeRTC.joinStreams = function (origStream, streamToAdd) {
+	var vT = streamToAdd.getVideoTracks();
+	for (var i = 0; i < vT.length; i++) {
+		origStream.addTrack(vT[i]);
+	}
+
+	var aT = streamToAdd.getAudioTracks();
+	for (var i = 0; i < vT.length; i++) {
+		origStream.addTrack(vT[i]);
+	}
+
+	return origStream;
 };
 wormholeRTC.prototype.enableWebcam = function() {
 	this.MediaConstraints.video = true;
