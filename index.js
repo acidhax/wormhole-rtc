@@ -13,6 +13,9 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	this.enableAudio = enableAudio || false;
 	this.enableScreen = enableScreen || false;
 	
+	this._videoStream = null;
+	this._audioStream = null;
+
 	var MediaConstraints = {
 		audio: this.enableAudio,
 		video: this.enableWebcam,
@@ -42,7 +45,23 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 };
 
 wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
+wormholeRTC.splitStreams = function (mediaStream) {
+	var audioStream, videoStream;
+	audioStream = new webkitMediaStream();
+	videoStream = new webkitMediaStream();
 
+	var vT = mediaStream.getVideoTracks();
+	for (var i = 0; i < vT.length; i++) {
+		videoStream.addTrack(vT[i]);
+	}
+	
+	var aT = mediaStream.getAudioTracks();
+	for (var i = 0; i < vT.length; i++) {
+		audioStream.addTrack(vT[i]);
+	}
+
+	return [audioStream, videoStream];
+};
 wormholeRTC.prototype.enableWebcam = function() {
 	this.MediaConstraints.video = true;
 };
