@@ -24,12 +24,14 @@ var wormholeRTC = function (enableWebcam, enableAudio) {
 		// 
 	});
 	this.addRTCFunction("handleOffer", function (offerDescription, cb) {
+		console.log("handleOffer", this.id, offerDescription);
 		self.handleOffer(this.id, offerDescription, cb);
 	});
 	this.addRTCFunction("handleAnswer", function (answerDescription) {
 		self.handleAnswer(this.id, answerDescription);
 	});
 	this.addRTCFunction("addIceCandidate", function (candidate) {
+		console.log("RTC:addIceCandidate", this.id);
 		self.handleIceCandidate(this.id, candidate);
 	});
 };
@@ -135,7 +137,7 @@ wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstr
 	return peer;
 };
 
-wormholeRTC.prototype.createConnection = function(id) {
+wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 	var self = this;
 	this.peers[id] = wormholeRTC.createConnection(function (ev) {
 		self.peerTransports[id] = ev.channel;
@@ -143,6 +145,7 @@ wormholeRTC.prototype.createConnection = function(id) {
 			self.wormholePeers[id] = new wormholePeer(id, ev.channel.label, self);
 		}
 		ev.channel.onopen = function () {
+			console.log("ev.channel.onopen");
 			self.wormholePeers[id].setRTCFunctions(self.rtcFunctions);
 			self.wormholePeers[id].setTransport(self.peerTransports[id]);
 			self.wormholePeers[id].setPeer(self.peers[id]);
@@ -154,6 +157,7 @@ wormholeRTC.prototype.createConnection = function(id) {
 		}
 	}, function (event) {
 		if (self.wormholePeers[id] && self.wormholePeers[id].renegotiating) {
+			console.log("Renegotiating ice candidate", id);
 			self.wormholePeers[id].rtc.addIceCandidate(event.candidate);
 		} else {
 			self.wh.rpc.addIceCandidate(id, event.candidate);
@@ -161,11 +165,20 @@ wormholeRTC.prototype.createConnection = function(id) {
 		}
 	}, function(mediaStream) {
 		console.log("Remote media stream for ID:", id);
-		cconsole.log("Remote media stream:", mediaStream);
-		// TODO: video.src = webkitURL.createObjectURL(mediaStream);
+		console.log("Remote media stream:", mediaStream);
+		console.log(webkitURL.createObjectURL(mediaStream.stream));
     });
-	for (var i = 0; i < this.streams.length; i++) {
-	    this.peers[id].addStream(this.streams[i]);
+	if (!this.wormholePeers[id] || !this.wormholePeers[id].renegotiating) {
+		if (!mediaStream) {
+			for (var i = 0; i < this.streams.length; i++) {
+				console.log("Adding stream", this.streams[i]);
+				this.peers[id].addStream(this.streams[i]);
+			}
+		} else {
+			this.peers[id].addStream(mediaStream);
+		}
+	} else if (this.wormholePeers[id] && this.wormholePeers[id].renegotiating) {
+		this.peers[id].addStream(mediaStream);
 	}
 	return this.peers[id];
 };
@@ -182,10 +195,10 @@ wormholeRTC.createOffer = function (peer, cb) {
 	);
 };
 
-wormholeRTC.prototype.createOffer = function(id, channel, cb) {
+wormholeRTC.prototype.createOffer = function(id, channel, cb, mediaStream) {
 	var _offerDescription;
 	var self = this;
-	var connect = this.createConnection(id);
+	var connect = this.createConnection(id, mediaStream);
 	setTimeout(function () {
 		if (connect.readyState == "connecting") {
 			// failed.
@@ -297,6 +310,7 @@ wormholePeer.prototype.setRTCFunctions = function(rtcFunctions) {
 
 wormholePeer.prototype.setTransport = function(transport) {
 	this.transport = transport;
+	var self = this;
 	transport.onmessage = function (ev) {
 		var data = JSON.parse(ev.data);
 		if (data.rtc) {
@@ -349,12 +363,11 @@ wormholePeer.prototype.renegotiate = function (mic, webcam) {
 			video = document.createElement("video");
 			video.src = window.URL.createObjectURL(mediaStream);
 		}
-		self.controller.createOffer(self.id, self.channel, function (desc) {
-			self.peer.addStream(mediaStream);
+		self.controller.createOffer(self.id, self.channel, function (err, desc) {
 			self.rtc.handleOffer(desc, function (remoteDescription) {
 				self.controller.handleAnswer(self.id, remoteDescription);
 			});
-		});
+		}, mediaStream);
 	}, function (err) {
 		// 
 	});
