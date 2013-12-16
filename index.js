@@ -9,16 +9,16 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	this.streams = [];
 	this.callback = [];
 
-	this.enableWebcam = enableWebcam || false;
-	this.enableAudio = enableAudio || false;
+	this.webcamEnabled = enableWebcam || false;
+	this.audioEnabled = enableAudio || false;
 	this.enableScreen = enableScreen || false;
 	
 	this._videoStream = null;
 	this._audioStream = null;
 
 	var MediaConstraints = {
-		audio: this.enableAudio,
-		video: this.enableWebcam,
+		audio: this.audioEnabled,
+		video: this.webcamEnabled,
 		screen: this.enableScreen
 	};
 	navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
@@ -102,6 +102,14 @@ wormholeRTC.prototype.disableMic = function() {
 			var audioTrack = aT[j];
 			audioTrack.stop();
 		}
+	}
+};
+
+wormholeRTC.prototype.renegotiateAll = function() {
+	var peers = Object.keys(this.wormholePeers);
+	for (var i = 0; i < peers.length; i++) {
+		var peer = this.wormholePeers[peers[i]];
+		peer.renegotiate(this.MediaConstraints.audio, this.MediaConstraints.video, this.MediaConstraints.screen);
 	}
 };
 
