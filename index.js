@@ -126,22 +126,22 @@ wormholeRTC.prototype.ready = function (cb) {
 		}
 	}
 };
-wormholeRTC.prototype.attachWormholeServer = function(wh) {
+wormholeRTC.prototype.attachWormholeServer = function(comm) {
 	var self = this;
-	this.wh = wh;
-	wh.on("createOffer", function () {
+	this.wh = comm;
+	comm.on("createOffer", function () {
 		self.createOffer.apply(self, arguments);
 	});
-	wh.on("handleOffer", function () {
+	comm.on("handleOffer", function () {
 		self.handleOffer.apply(self, arguments);
 	});
-	wh.on("handleAnswer", function () {
+	comm.on("handleAnswer", function () {
 		self.handleAnswer.apply(self, arguments);
 	});
-	wh.on("handleLeave", function () {
+	comm.on("handleLeave", function () {
 		self.handleLeave.apply(self, arguments);
 	});
-	wh.on("handleIceCandidate", function () {
+	comm.on("handleIceCandidate", function () {
 		self.handleIceCandidate.apply(self, arguments);
 	});
 	wormhole.prototype.message = function(id, channel) {
@@ -551,3 +551,111 @@ var __randomString = function() {
 // 
 // wormholePeer.renegotiate(true, false);
 // --> wormholePeer.rtc.createOffer(id, channel, cb)
+
+var WormholeRTCClientCommunicator = function (comm) {
+	EventEmitter.EventEmitter.call(this);
+	this.comm = comm;
+	if (comm) {
+		this.attachHandlers();
+	}
+};
+WormholeRTCClientCommunicator.prototype = Object.create(EventEmitter.EventEmitter.prototype);
+WormholeRTCClientCommunicator.prototype.joinRTCChannel = function(channel) {
+	this.comm.transmit("joinRTCChannel", channel);
+};
+WormholeRTCClientCommunicator.prototype.sendIceCandidate = function(id, iceCandidate) {
+	this.comm.transmit("iceCandidate", id, iceCandidate);
+};
+WormholeRTCClientCommunicator.prototype.createOffer = function () {
+	this.emit.apply(this, ["createOffer"].concat([].slice.call(arguments)));
+};
+WormholeRTCClientCommunicator.prototype.handleOffer = function () {
+	this.emit.apply(this, ["handleOffer"].concat([].slice.call(arguments)));
+};
+WormholeRTCClientCommunicator.prototype.handleAnswer = function () {
+	this.emit.apply(this, ["handleAnswer"].concat([].slice.call(arguments)));
+};
+WormholeRTCClientCommunicator.prototype.handleLeave = function () {
+	this.emit.apply(this, ["handleLeave"].concat([].slice.call(arguments)));
+};
+WormholeRTCClientCommunicator.prototype.handleIceCandidate = function () {
+	this.emit.apply(this, ["handleIceCandidate"].concat([].slice.call(arguments)));
+};
+WormholeRTCClientCommunicator.prototype.attachHandlers = function(comm) {
+	this.comm = this.comm || comm;
+	var self = this;
+	this.comm.on("createOffer", function () {
+		self.createOffer.apply(self, arguments);
+	});
+	this.comm.on("handleOffer", function () {
+		self.handleOffer.apply(self, arguments);
+	});
+	this.comm.on("handleAnswer", function () {
+		self.handleAnswer.apply(self, arguments);
+	});
+	this.comm.on("handleLeave", function () {
+		self.handleLeave.apply(self, arguments);
+	});
+	this.comm.on("handleIceCandidate", function () {
+		self.handleIceCandidate.apply(self, arguments);
+	});
+};
+
+var WormholeRTCServerCommunicator = function (wh, comm) {
+	EventEmitter.EventEmitter.call(this);
+	this.wh = wh;
+	this.comm = comm;
+
+	this.tabSubscriptions = {};
+
+	if (wh && comm) {
+		this.attachHandlers();
+	}
+};
+
+WormholeRTCServerCommunicator.prototype.attachHandlers = function(wh, comm) {
+	var self = this;
+	this.wh = this.wh || wh;
+	this.comm = this.comm || comm;
+
+	this.comm.on("joinRTCChannel", function (channel) {
+		var tabId = this.lastTab.id;
+		if (!self.tabSubscriptions[channel]) {
+			self.tabSubscriptions[channel] = [];
+		}
+		self.tabSubscriptions[channel].push(tabId);
+	});
+
+	this.comm.on("leaveRTCChannel", function (channel) {
+		var tabId = this.lastTab.id;
+		if (self.tabSubscriptions[channel] && self.tabSubscriptions[channel].indexOf(tabId) > -1) {
+			var loc = self.tabSubscriptions[channel].indexOf(tabId);
+			self.tabSubscriptions[channel] = self.tabSubscriptions[channel].splice(loc, 1);
+
+			if (self.tabSubscriptions[channel].length == 0) {
+				self.wh.rpc.leaveRTCChannel(channel);
+			}
+		}
+	});
+
+	this.wh.on("createOffer", function () {
+		// TODO: Transmit based on channel.
+		self.comm.transmit.apply(this, ["createOffer"].concat([].slice.call(arguments)));
+	});
+	this.wh.on("handleOffer", function () {
+		// TODO: Transmit based on channel.
+		self.comm.transmit.apply(this, ["handleOffer"].concat([].slice.call(arguments)));
+	});
+	this.wh.on("handleAnswer", function () {
+		// TODO: Transmit based on channel.
+		self.comm.transmit.apply(this, ["handleOffer"].concat([].slice.call(arguments)));
+	});
+	this.wh.on("handleLeave", function () {
+		// TODO: Transmit based on channel.
+		self.comm.transmit.apply(this, ["handleOffer"].concat([].slice.call(arguments)));
+	});
+	this.wh.on("handleIceCandidate", function () {
+		// TODO: Transmit based on channel.
+		self.comm.transmit.apply(this, ["handleOffer"].concat([].slice.call(arguments)));
+	});
+};
