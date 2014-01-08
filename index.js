@@ -1,6 +1,6 @@
 var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	var self = this;
-	EventEmitter.EventEmitter.call(this);
+	SimplEE.EventEmitter.call(this);
 	this.rtcFunctions = {};
 	this.peers = {};
 	this.peerTransports = {};
@@ -21,16 +21,21 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 		video: this.webcamEnabled,
 		screen: this.enableScreen
 	};
-	navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
-		self.MediaConstraints = MediaConstraints;
-		self.addStream(mediaStream);
-		self.ready();
-		self.emit("ready");
-	}, function (err) {
+	var errFunc = function () {
 		self.MediaConstraints = { audio: false, video: false, screen: false };
 		self.ready();
 		self.emit("ready");
-	});
+	};
+	if (MediaConstraints.audio || MediaConstraints.video || MediaConstraints.screen) {
+		navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
+			self.MediaConstraints = MediaConstraints;
+			self.addStream(mediaStream);
+			self.ready();
+			self.emit("ready");
+		}, errFunc);
+	} else {
+		errFunc();
+	}
 	this.addRTCFunction("handleOffer", function (offerDescription, cb) {
 		console.log("handleOffer", this.id, offerDescription);
 		self.handleOffer(this.id, offerDescription, cb);
@@ -44,7 +49,7 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	});
 };
 
-wormholeRTC.prototype = Object.create(EventEmitter.EventEmitter.prototype);
+wormholeRTC.prototype = Object.create(SimplEE.EventEmitter.prototype);
 wormholeRTC.splitStreams = function (mediaStream) {
 	var audioStream, videoStream;
 	audioStream = new webkitMediaStream();
@@ -217,10 +222,13 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 	var self = this;
 	console.log("wormholeRTC.prototype.createConnection", id);
 	this.peers[id] = wormholeRTC.createConnection(function (ev) {
+		console.log("wormholeRTC.createConnection.ev", ev);
 		self.peerTransports[id] = ev.channel;
 		if (!self.wormholePeers[id]) {
 			self.wormholePeers[id] = new wormholePeer(id, ev.channel.label, self);
 			self.wormholePeers[id].MediaConstraints = self.MediaConstraints;
+		} else {
+			self.wormholePeers[id].setDataChannel(ev.channel.label);
 		}
 		ev.channel.onopen = function () {
 			console.log("ev.channel.onopen");
@@ -231,7 +239,8 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 			self.emit("rtcConnection", self.wormholePeers[id]);
 		}
 		ev.channel.onclose = function () {
-			self.emit("rtcDisonnection", self.wormholePeers[id]);
+			console.log("ev.channel.onclose");
+			// self.emit("rtcDisconnection", self.wormholePeers[id]);
 		}
 	}, function (event) {
 		if (self.wormholePeers[id] && self.wormholePeers[id].renegotiating) {
@@ -244,7 +253,13 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 	}, function(mediaStream) {
 		console.log("Remote media stream for ID:", id);
 		console.log("Remote media stream:", mediaStream);
+		console.log("Remote media stream:", mediaStream.stream);
 		console.log(webkitURL.createObjectURL(mediaStream.stream));
+		if (!self.wormholePeers[id]) {
+			self.wormholePeers[id] = new wormholePeer(id, null, self);
+			self.wormholePeers[id].MediaConstraints = self.MediaConstraints;
+		}
+		self.wormholePeers[id].addStream(webkitURL.createObjectURL(mediaStream.stream));
     });
 	if (!this.wormholePeers[id] || !this.wormholePeers[id].renegotiating) {
 		if (!mediaStream) {
@@ -288,7 +303,8 @@ wormholeRTC.prototype.createOffer = function(id, channel, cb, mediaStream) {
 	self.peers[id].ondatachannel({channel: this.peerTransports[id]});
 
 	this.peerTransports[id].onclose = function () {
-		self.emit("rtcDisonnection", self.wormholePeers[id]);
+		console.log("ev.peerTransports.onclose");
+		// self.emit("rtcDisconnection", self.wormholePeers[id]);
 	};
 	wormholeRTC.createOffer(connect, function (desc) {
 		if (this.wormholePeers[id]) {
@@ -346,15 +362,16 @@ wormholeRTC.prototype.handleIceCandidate = function(id, candidate) {
 };
 
 wormholeRTC.prototype.addStream = function (stream, type) {
-	this.streams.push(new webkitMediaStream(stream));
+	this.streams.push(stream);
 };
 
 wormholeRTC.prototype.handleLeave = function(id) {
 	// remove ID
-	this.emit("rtcDisonnection", this.wormholePeers[id]);
+	console.log("emitting rtcDisconnection", this.wormholePeers[id]);
+	this.emit("rtcDisconnection", this.wormholePeers[id]);
 	this.peers[id].close();
 	delete this.peers[id];
-	delete this.wormholePeers[id];
+	// delete this.wormholePeers[id];
 	delete this.peerTransports[id];
 };
 
@@ -367,7 +384,7 @@ wormholeRTC.prototype.getPeer = function(id) {
 };
 
 var wormholePeer = function (id, datachannel, controller) {
-	EventEmitter.EventEmitter.call(this);
+	SimplEE.EventEmitter.call(this);
 	var self = this;
 	this.id = id;
 	this.channel = datachannel || "TEMPCHANNELNAME";
@@ -379,7 +396,15 @@ var wormholePeer = function (id, datachannel, controller) {
 	this.streams = [];
 };
 
-wormholePeer.prototype = Object.create(EventEmitter.EventEmitter.prototype);
+wormholePeer.prototype = Object.create(SimplEE.EventEmitter.prototype);
+
+
+wormholePeer.prototype.setDataChannel = function(channel) {
+	this.channel = channel;
+};
+wormholePeer.prototype.addStream = function(stream) {
+	this.streams.push(stream);
+};
 
 wormholePeer.prototype.setPeer = function(peer) {
 	this.peer = peer;
@@ -553,13 +578,13 @@ var __randomString = function() {
 // --> wormholePeer.rtc.createOffer(id, channel, cb)
 
 var WormholeRTCClientCommunicator = function (comm) {
-	EventEmitter.EventEmitter.call(this);
+	SimplEE.EventEmitter.call(this);
 	this.comm = comm;
 	if (comm) {
 		this.attachHandlers();
 	}
 };
-WormholeRTCClientCommunicator.prototype = Object.create(EventEmitter.EventEmitter.prototype);
+WormholeRTCClientCommunicator.prototype = Object.create(SimplEE.EventEmitter.prototype);
 WormholeRTCClientCommunicator.prototype.joinRTCChannel = function(channel) {
 	this.comm.transmit("joinRTCChannel", channel);
 };
@@ -602,7 +627,7 @@ WormholeRTCClientCommunicator.prototype.attachHandlers = function(comm) {
 };
 
 var WormholeRTCServerCommunicator = function (wh, comm) {
-	EventEmitter.EventEmitter.call(this);
+	SimplEE.EventEmitter.call(this);
 	this.wh = wh;
 	this.comm = comm;
 
