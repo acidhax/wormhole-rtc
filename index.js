@@ -260,6 +260,7 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 			self.wormholePeers[id].MediaConstraints = self.MediaConstraints;
 		}
 		self.wormholePeers[id].addStream(webkitURL.createObjectURL(mediaStream.stream));
+		self.emit("rtcStreamAdded", self.wormholePeers[id]);
     });
 	if (!this.wormholePeers[id] || !this.wormholePeers[id].renegotiating) {
 		if (!mediaStream) {
