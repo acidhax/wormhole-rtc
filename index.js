@@ -16,6 +16,23 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	this._videoStream = null;
 	this._audioStream = null;
 
+	this.addRTCFunction("handleOffer", function (offerDescription, cb) {
+		console.log("handleOffer", this.id, offerDescription);
+		self.handleOffer(this.id, offerDescription, cb);
+	});
+	this.addRTCFunction("handleAnswer", function (answerDescription) {
+		self.handleAnswer(this.id, answerDescription);
+	});
+	this.addRTCFunction("addIceCandidate", function (candidate) {
+		console.log("RTC:addIceCandidate", this.id);
+		self.handleIceCandidate(this.id, candidate);
+	});
+};
+
+wormholeRTC.prototype = Object.create(SimplEE.EventEmitter.prototype);
+
+wormholeRTC.prototype.initialize = function () {
+	var self = this;
 	var MediaConstraints = {
 		audio: this.audioEnabled,
 		video: this.webcamEnabled,
@@ -36,20 +53,8 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	} else {
 		errFunc();
 	}
-	this.addRTCFunction("handleOffer", function (offerDescription, cb) {
-		console.log("handleOffer", this.id, offerDescription);
-		self.handleOffer(this.id, offerDescription, cb);
-	});
-	this.addRTCFunction("handleAnswer", function (answerDescription) {
-		self.handleAnswer(this.id, answerDescription);
-	});
-	this.addRTCFunction("addIceCandidate", function (candidate) {
-		console.log("RTC:addIceCandidate", this.id);
-		self.handleIceCandidate(this.id, candidate);
-	});
 };
 
-wormholeRTC.prototype = Object.create(SimplEE.EventEmitter.prototype);
 wormholeRTC.splitStreams = function (mediaStream) {
 	var audioStream, videoStream;
 	audioStream = new webkitMediaStream();
@@ -368,12 +373,14 @@ wormholeRTC.prototype.addStream = function (stream, type) {
 
 wormholeRTC.prototype.handleLeave = function(id) {
 	// remove ID
-	console.log("emitting rtcDisconnection", this.wormholePeers[id]);
-	this.emit("rtcDisconnection", this.wormholePeers[id]);
-	this.peers[id].close();
-	delete this.peers[id];
-	// delete this.wormholePeers[id];
-	delete this.peerTransports[id];
+	if (this.wormholePeers[id]) {
+		console.log("emitting rtcDisconnection", this.wormholePeers[id]);
+		this.emit("rtcDisconnection", this.wormholePeers[id]);
+		this.peers[id].close();
+		delete this.peers[id];
+		// delete this.wormholePeers[id];
+		delete this.peerTransports[id];	
+	}
 };
 
 wormholeRTC.prototype.getPeers = function(cb) {
