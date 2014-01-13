@@ -27,16 +27,16 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 		console.log("RTC:addIceCandidate", this.id);
 		self.handleIceCandidate(this.id, candidate);
 	});
-	this.addRTCFunction("videoDisabled", function () {
+	this.addRTCFunction("disableVideo", function () {
 		this.emit("videoDisabled");
 	});
-	this.addRTCFunction("videoEnabled", function () {
+	this.addRTCFunction("enableVideo", function () {
 		this.emit("videoEnabled");
 	});
-	this.addRTCFunction("audioDisabled", function () {
+	this.addRTCFunction("disableAudio", function () {
 		this.emit("audioDisabled");
 	});
-	this.addRTCFunction("audioEnabled", function () {
+	this.addRTCFunction("enableAudio", function () {
 		this.emit("audioEnabled");
 	});
 };
