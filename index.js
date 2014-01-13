@@ -446,7 +446,11 @@ wormholeRTC.prototype.handleAnswer = function(id, answerDescription) {
 
 wormholeRTC.prototype.handleIceCandidate = function(id, candidate) {
 	if (id && candidate && this.peers[id]) {
-		this.peers[id].addIceCandidate(new RTCIceCandidate(candidate));
+		try {
+			this.peers[id].addIceCandidate(new RTCIceCandidate(candidate));
+		} catch (ex) {
+			// 
+		}
 	}
 };
 
