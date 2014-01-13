@@ -264,8 +264,8 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 			self.wormholePeers[id] = new wormholePeer(id, null, self);
 			self.wormholePeers[id].MediaConstraints = self.MediaConstraints;
 		}
-		self.wormholePeers[id].addStream(webkitURL.createObjectURL(mediaStream.stream));
-		self.emit("rtcStreamAdded", self.wormholePeers[id]);
+		self.wormholePeers[id].addStream(webkitURL.createObjectURL(mediaStream.stream), mediaStream.stream);
+		self.emit("rtcStreamAdded", self.wormholePeers[id], mediaStream.stream);
     });
 	if (!this.wormholePeers[id] || !this.wormholePeers[id].renegotiating) {
 		if (!mediaStream) {
@@ -376,6 +376,7 @@ wormholeRTC.prototype.handleLeave = function(id) {
 	if (this.wormholePeers[id]) {
 		console.log("emitting rtcDisconnection", this.wormholePeers[id]);
 		this.emit("rtcDisconnection", this.wormholePeers[id]);
+		this.wormholePeers[id].emit("rtcDisconnection");
 		this.peers[id].close();
 		delete this.peers[id];
 		// delete this.wormholePeers[id];
@@ -402,16 +403,38 @@ var wormholePeer = function (id, datachannel, controller) {
 	this.rtc = {};
 	this.uuidList = {};
 	this.streams = [];
+	this.streamObj = {};
 };
 
 wormholePeer.prototype = Object.create(SimplEE.EventEmitter.prototype);
 
-
 wormholePeer.prototype.setDataChannel = function(channel) {
 	this.channel = channel;
 };
-wormholePeer.prototype.addStream = function(stream) {
-	this.streams.push(stream);
+
+wormholePeer.prototype.addStream = function(streamUrl, streamObj) {
+	this.streams.push(streamObj);
+	this.streamObj[streamObj] = streamUrl;
+};
+
+wormholePeer.prototype.hasAudio = function() {
+	for (var i = 0; i < this.streams.length; i++) {
+		var stream = this.streams[i];
+		if (stream.getAudioTracks().length) {
+			return true;
+		}
+	}
+	return false;
+};
+
+wormholePeer.prototype.hasVideo = function() {
+	for (var i = 0; i < this.streams.length; i++) {
+		var stream = this.streams[i];
+		if (stream.getVideoTracks().length) {
+			return true;
+		}
+	}
+	return false;
 };
 
 wormholePeer.prototype.setPeer = function(peer) {
@@ -448,10 +471,16 @@ wormholePeer.prototype.setTransport = function(transport) {
 
 wormholePeer.prototype.muteAudio = function () {
 	// Audio stream still continues, but doesn't decode/play.
+	this.streams.forEach(function (stream) {
+		// 
+	});
 };
 
 wormholePeer.prototype.muteVideo = function () {
 	// Video stream still continues, but doesn't decode/play.
+	this.streams.forEach(function (stream) {
+		// 
+	});
 };
 
 wormholePeer.prototype.muteLocalAudio = function () {
