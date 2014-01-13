@@ -494,7 +494,22 @@ wormholePeer.prototype.unmute = function () {
 wormholePeer.prototype.muteVideo = function () {
 	// Video stream still continues, but doesn't decode/play.
 	this.streams.forEach(function (stream) {
-		// 
+		if (stream.getVideoTracks().length) {
+			stream.getVideoTracks().forEach(function (track) {
+				track.enabled = false;
+			});
+		}
+	});
+};
+
+wormholePeer.prototype.unmuteVideo = function () {
+	// Video stream still continues, but doesn't decode/play.
+	this.streams.forEach(function (stream) {
+		if (stream.getVideoTracks().length) {
+			stream.getVideoTracks().forEach(function (track) {
+				track.enabled = true;
+			});
+		}
 	});
 };
 
