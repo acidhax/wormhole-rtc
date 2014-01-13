@@ -127,6 +127,7 @@ wormholeRTC.prototype.unmuteVideo = function() {
 			videoTrack.enabled = true;
 		}
 	}
+	this.executeAll("enableVideo");
 };
 wormholeRTC.prototype.muteVideo = function () {
 	this.MediaConstraints.video = false;
@@ -138,6 +139,7 @@ wormholeRTC.prototype.muteVideo = function () {
 			videoTrack.enabled = false;
 		}
 	}
+	this.executeAll("disableVideo");
 };
 
 wormholeRTC.prototype.unmute = function() {
@@ -150,6 +152,7 @@ wormholeRTC.prototype.unmute = function() {
 			audioTrack.enabled = true;
 		}
 	}
+	this.executeAll("enableAudio");
 };
 wormholeRTC.prototype.mute = function() {
 	this.MediaConstraints.audio = false;
@@ -161,6 +164,7 @@ wormholeRTC.prototype.mute = function() {
 			audioTrack.enabled = false;
 		}
 	}
+	this.executeAll("disableAudio");
 };
 
 wormholeRTC.prototype.hasAudio = function() {
