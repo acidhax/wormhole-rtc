@@ -55,7 +55,7 @@ wormholeRTC.prototype.initialize = function () {
 	}
 };
 
-wormholePeer.prototype.hasAudio = function() {
+wormholeRTC.prototype.hasAudio = function() {
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		if (stream.getAudioTracks().length) {
@@ -65,7 +65,7 @@ wormholePeer.prototype.hasAudio = function() {
 	return false;
 };
 
-wormholePeer.prototype.hasVideo = function() {
+wormholeRTC.prototype.hasVideo = function() {
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		if (stream.getVideoTracks().length) {
@@ -105,7 +105,7 @@ wormholeRTC.joinStreams = function (origStream, streamToAdd) {
 
 	return origStream;
 };
-wormholeRTC.prototype.enableWebcam = function() {
+wormholeRTC.prototype.unmuteVideo = function() {
 	this.MediaConstraints.video = true;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
@@ -116,7 +116,7 @@ wormholeRTC.prototype.enableWebcam = function() {
 		}
 	}
 };
-wormholeRTC.prototype.disableWebcam = function () {
+wormholeRTC.prototype.muteVideo = function () {
 	this.MediaConstraints.video = false;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
@@ -128,7 +128,7 @@ wormholeRTC.prototype.disableWebcam = function () {
 	}
 };
 
-wormholeRTC.prototype.enableMic = function() {
+wormholeRTC.prototype.unmute = function() {
 	this.MediaConstraints.audio = true;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
@@ -139,7 +139,7 @@ wormholeRTC.prototype.enableMic = function() {
 		}
 	}
 };
-wormholeRTC.prototype.disableMic = function() {
+wormholeRTC.prototype.mute = function() {
 	this.MediaConstraints.audio = false;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
@@ -151,7 +151,7 @@ wormholeRTC.prototype.disableMic = function() {
 	}
 };
 
-wormholePeer.prototype.hasAudio = function() {
+wormholeRTC.prototype.hasAudio = function() {
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		if (stream.getAudioTracks().length) {
@@ -161,7 +161,7 @@ wormholePeer.prototype.hasAudio = function() {
 	return false;
 };
 
-wormholePeer.prototype.hasVideo = function() {
+wormholeRTC.prototype.hasVideo = function() {
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		if (stream.getVideoTracks().length) {
