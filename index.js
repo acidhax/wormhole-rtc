@@ -476,9 +476,10 @@ wormholeRTC.prototype.executeAll = function() {
 };
 
 wormholeRTC.prototype.getPeers = function(cb) {
+	var self = this;
 	var out = [];
 	Object.keys(this.wormholePeers).forEach(function (id) {
-		out.push(this.wormholePeers[id]);
+		out.push(self.wormholePeers[id]);
 	});
 	cb && cb(out);
 	return out;
