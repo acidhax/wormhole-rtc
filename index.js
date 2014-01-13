@@ -27,6 +27,18 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 		console.log("RTC:addIceCandidate", this.id);
 		self.handleIceCandidate(this.id, candidate);
 	});
+	this.addRTCFunction("videoDisabled", function () {
+		this.emit("videoDisabled");
+	});
+	this.addRTCFunction("videoEnabled", function () {
+		this.emit("videoEnabled");
+	});
+	this.addRTCFunction("audioDisabled", function () {
+		this.emit("audioDisabled");
+	});
+	this.addRTCFunction("audioEnabled", function () {
+		this.emit("audioEnabled");
+	});
 };
 
 wormholeRTC.prototype = Object.create(SimplEE.EventEmitter.prototype);
@@ -452,7 +464,12 @@ wormholeRTC.prototype.handleLeave = function(id) {
 };
 
 wormholeRTC.prototype.getPeers = function(cb) {
-	
+	var out = [];
+	Object.keys(this.wormholePeers).forEach(function (id) {
+		out.push(this.wormholePeers[id]);
+	});
+	cb && cb(out);
+	return out;
 };
 
 wormholeRTC.prototype.getPeer = function(id) {
