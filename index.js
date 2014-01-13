@@ -301,13 +301,13 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 	this.peers[id] = wormholeRTC.createConnection(function (ev) {
 		console.log("wormholeRTC.createConnection.ev", ev);
 		self.peerTransports[id] = ev.channel;
-		if (!self.wormholePeers[id]) {
-			self.wormholePeers[id] = new wormholePeer(id, ev.channel.label, self);
-			self.wormholePeers[id].MediaConstraints = self.MediaConstraints;
-		} else {
-			self.wormholePeers[id].setDataChannel(ev.channel.label);
-		}
 		ev.channel.onopen = function () {
+			if (!self.wormholePeers[id]) {
+				self.wormholePeers[id] = new wormholePeer(id, ev.channel.label, self);
+				self.wormholePeers[id].MediaConstraints = self.MediaConstraints;
+			} else {
+				self.wormholePeers[id].setDataChannel(ev.channel.label);
+			}
 			console.log("ev.channel.onopen");
 			self.wormholePeers[id].setRTCFunctions(self.rtcFunctions);
 			self.wormholePeers[id].setTransport(self.peerTransports[id]);
