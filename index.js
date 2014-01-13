@@ -469,10 +469,25 @@ wormholePeer.prototype.setTransport = function(transport) {
 	};
 };
 
-wormholePeer.prototype.muteAudio = function () {
+wormholePeer.prototype.mute = function () {
 	// Audio stream still continues, but doesn't decode/play.
 	this.streams.forEach(function (stream) {
-		// 
+		if (stream.getAudioTracks().length) {
+			stream.getAudioTracks().forEach(function (track) {
+				track.enabled = false;
+			});
+		}
+	});
+};
+
+wormholePeer.prototype.unmute = function () {
+	// Audio stream still continues, but doesn't decode/play.
+	this.streams.forEach(function (stream) {
+		if (stream.getAudioTracks().length) {
+			stream.getAudioTracks().forEach(function (track) {
+				track.enabled = true;
+			});
+		}
 	});
 };
 
@@ -481,14 +496,6 @@ wormholePeer.prototype.muteVideo = function () {
 	this.streams.forEach(function (stream) {
 		// 
 	});
-};
-
-wormholePeer.prototype.muteLocalAudio = function () {
-	// Audio stream still continues, but doesn't decode/play.
-};
-
-wormholePeer.prototype.muteLocalVideo = function () {
-	// Video stream still continues, but doesn't decode/play.
 };
 
 wormholePeer.prototype.renegotiate = function (mic, webcam, screen) {
