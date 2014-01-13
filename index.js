@@ -463,6 +463,14 @@ wormholeRTC.prototype.handleLeave = function(id) {
 	}
 };
 
+wormholeRTC.prototype.executeAll = function() {
+	var args = [].slice.call(arguments);
+	var func = args.shift();
+	this.getPeers().forEach(function (wormholePeer) {
+		wormholePeer.rtc[func].apply(wormholePeer, args);
+	});
+};
+
 wormholeRTC.prototype.getPeers = function(cb) {
 	var out = [];
 	Object.keys(this.wormholePeers).forEach(function (id) {
