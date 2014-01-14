@@ -45,6 +45,12 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	this.addRTCFunction("enableAudio", function () {
 		this.emit("audioEnabled");
 	});
+	this.addRTCFunction("speaking", function () {
+		this.emit("speaking");
+	});
+	this.addRTCFunction("stoppedSpeaking", function () {
+		this.emit("stoppedSpeaking");
+	});
 };
 
 wormholeRTC.prototype = Object.create(SimplEE.EventEmitter.prototype);
@@ -465,7 +471,22 @@ wormholeRTC.prototype.handleIceCandidate = function(id, candidate) {
 };
 
 wormholeRTC.prototype.addStream = function (stream, type) {
+	var self = this;
 	this.streams.push(stream);
+	if (hark) {
+		var speech = hark(stream, {
+			interval: 30,
+			play: true
+		});
+		speech.on('speaking', function() {
+			self.emit('speaking');
+			self.executeAll("speaking");
+		});
+		speech.on('stopped_speaking', function() {
+			self.emit('stoppedSpeaking');
+			self.executeAll("stoppedSpeaking");
+		});
+	}
 };
 
 wormholeRTC.prototype.handleLeave = function(id) {
@@ -527,18 +548,6 @@ wormholePeer.prototype.addStream = function(streamUrl, streamObj) {
 	this.streams.push(streamObj);
 	this.streamObj[streamObj] = streamUrl;
 	var self = this;
-	if (hark) {
-		var speech = hark(streamObj, {
-			interval: 30,
-			play: true
-		});
-		speech.on('speaking', function() {
-			self.emit('speaking')
-		});
-		speech.on('stopped_speaking', function() {
-			self.emit('stoppedSpeaking')
-		});
-	}
 };
 
 wormholePeer.prototype.hasAudio = function() {
