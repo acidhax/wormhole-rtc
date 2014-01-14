@@ -527,13 +527,15 @@ wormholePeer.prototype.addStream = function(streamUrl, streamObj) {
 	this.streams.push(streamObj);
 	this.streamObj[streamObj] = streamUrl;
 	var self = this;
-	var speech = hark(streamObj);
-	speech.on('speaking', function() {
-		self.emit('speaking')
-	});
-	speech.on('stopped_speaking', function() {
-		self.emit('stopped_speaking')
-	});
+	if (hark) {
+		var speech = hark(streamObj);
+		speech.on('speaking', function() {
+			self.emit('speaking')
+		});
+		speech.on('stopped_speaking', function() {
+			self.emit('stopped_speaking')
+		});
+	}
 };
 
 wormholePeer.prototype.hasAudio = function() {
