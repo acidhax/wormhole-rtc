@@ -528,7 +528,10 @@ wormholePeer.prototype.addStream = function(streamUrl, streamObj) {
 	this.streamObj[streamObj] = streamUrl;
 	var self = this;
 	if (hark) {
-		var speech = hark(streamObj);
+		var speech = hark(streamObj, {
+			interval: 30,
+			play: true
+		});
 		speech.on('speaking', function() {
 			self.emit('speaking')
 		});
