@@ -62,12 +62,16 @@ wormholeRTC.prototype.initialize = function () {
 		self.emit("ready");
 	};
 	if (MediaConstraints.audio || MediaConstraints.video || MediaConstraints.screen) {
-		navigator.getUserMedia(MediaConstraints, function (mediaStream) {
-			self.MediaConstraints = MediaConstraints;
-			self.addStream(mediaStream);
-			self.ready();
-			self.emit("ready");
-		}, errFunc);
+		try {
+			navigator.getUserMedia(MediaConstraints, function (mediaStream) {
+				self.MediaConstraints = MediaConstraints;
+				self.addStream(mediaStream);
+				self.ready();
+				self.emit("ready");
+			}, errFunc);
+		} catch (ex) {
+			errFunc();
+		}
 	} else {
 		errFunc();
 	}
