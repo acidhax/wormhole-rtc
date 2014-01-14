@@ -1,3 +1,9 @@
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
+window.RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate;
+
 var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	var self = this;
 	SimplEE.EventEmitter.call(this);
@@ -42,8 +48,7 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 };
 
 wormholeRTC.prototype = Object.create(SimplEE.EventEmitter.prototype);
-navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+
 wormholeRTC.prototype.initialize = function () {
 	var self = this;
 	var MediaConstraints = {
@@ -277,7 +282,7 @@ wormholeRTC.prototype.addRTCFunction = function(key, func) {
 };
 
 wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstream) {
-	var peer = new webkitRTCPeerConnection({
+	var peer = new RTCPeerConnection({
 		iceServers: [
 			{ url: "stun:stun.l.google.com:19302" },
 			{ url: 'turn:asdf@ec2-54-227-128-105.compute-1.amazonaws.com:3479', credential:'asdf' }
