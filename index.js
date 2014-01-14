@@ -42,7 +42,8 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 };
 
 wormholeRTC.prototype = Object.create(SimplEE.EventEmitter.prototype);
-
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 wormholeRTC.prototype.initialize = function () {
 	var self = this;
 	var MediaConstraints = {
@@ -56,7 +57,7 @@ wormholeRTC.prototype.initialize = function () {
 		self.emit("ready");
 	};
 	if (MediaConstraints.audio || MediaConstraints.video || MediaConstraints.screen) {
-		navigator.webkitGetUserMedia(MediaConstraints, function (mediaStream) {
+		navigator.getUserMedia(MediaConstraints, function (mediaStream) {
 			self.MediaConstraints = MediaConstraints;
 			self.addStream(mediaStream);
 			self.ready();
