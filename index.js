@@ -536,7 +536,7 @@ wormholePeer.prototype.addStream = function(streamUrl, streamObj) {
 			self.emit('speaking')
 		});
 		speech.on('stopped_speaking', function() {
-			self.emit('stopped_speaking')
+			self.emit('stoppedSpeaking')
 		});
 	}
 };
