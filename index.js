@@ -335,7 +335,7 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 		console.log("Remote media stream for ID:", id);
 		console.log("Remote media stream:", mediaStream);
 		console.log("Remote media stream:", mediaStream.stream);
-		console.log(webkitURL.createObjectURL(mediaStream.stream));
+		console.log(URL.createObjectURL(mediaStream.stream));
 		if (!self.wormholePeers[id]) {
 			self.wormholePeers[id] = new wormholePeer(id, null, self);
 			self.wormholePeers[id].MediaConstraints = self.MediaConstraints;
@@ -346,7 +346,7 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 			self.emit("rtcConnection", self.wormholePeers[id]);
 		}
 
-		var streamUrl = webkitURL.createObjectURL(mediaStream.stream);
+		var streamUrl = URL.createObjectURL(mediaStream.stream);
 		self.wormholePeers[id].addStream(streamUrl, mediaStream.stream);
 		self.wormholePeers[id].emit("streamAdded", mediaStream.stream, streamUrl);
 		self.emit("rtcStreamAdded", self.wormholePeers[id], mediaStream.stream, streamUrl);
