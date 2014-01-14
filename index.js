@@ -284,8 +284,8 @@ wormholeRTC.prototype.addRTCFunction = function(key, func) {
 wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstream) {
 	var peer = new RTCPeerConnection({
 		iceServers: [
-			{ url: "stun:stun.l.google.com:19302" },
-			{ url: 'turn:asdf@ec2-54-227-128-105.compute-1.amazonaws.com:3479', credential:'asdf', username:'asdf' }
+			{ url: "stun:stun.l.google.com:19302" }
+			// { url: 'turn:asdf@ec2-54-227-128-105.compute-1.amazonaws.com:3479', credential:'asdf', username:'asdf' }
 		]
 	}, { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'SctpDataChannels': true}] });
 
