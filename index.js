@@ -76,6 +76,7 @@ wormholeRTC.prototype.initialize = function () {
 				self.emit("ready");
 			}, errFunc);
 		} catch (ex) {
+			console.log("Exception!", ex);
 			errFunc();
 		}
 	} else {
