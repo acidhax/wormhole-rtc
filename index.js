@@ -476,7 +476,8 @@ wormholeRTC.prototype.addStream = function (stream, type) {
 	this.streams.push(stream);
 	if (hark) {
 		var speech = hark(stream, {
-			interval: 30
+			interval: 100,
+			threshold: -65
 		});
 		speech.on('speaking', function() {
 			self.emit('speaking');
