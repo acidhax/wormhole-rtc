@@ -51,6 +51,9 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	this.addRTCFunction("stoppedSpeaking", function () {
 		this.emit("stoppedSpeaking");
 	});
+	this.addRTCFunction("test", function (a, cb) {
+		cb(a);
+	});
 };
 
 wormholeRTC.prototype = Object.create(SimplEE.EventEmitter.prototype);
@@ -507,7 +510,9 @@ wormholeRTC.prototype.executeAll = function() {
 	var args = [].slice.call(arguments);
 	var func = args.shift();
 	this.getPeers().forEach(function (wormholePeer) {
-		wormholePeer.rtc[func].apply(wormholePeer, args);
+		if (wormholePeer && wormholePeer.rtc[func]) {
+			wormholePeer.rtc[func].apply(wormholePeer, args);
+		}
 	});
 };
 
@@ -734,7 +739,7 @@ wormholePeer.prototype.executeRTCFunction = function(functionName, args, callbac
 	}
 	if (this.transport.readyState == "open") {
 		this.transport.send(JSON.stringify({"rtc": true, data: out}));
-	} else if (self.uuidList[out.uuid]) {
+	} else if (out.uuid && self.uuidList[out.uuid]) {
 		self.uuidList[out.uuid].call(self, "Transport closed");
 		delete self.uuidList[out.uuid];
 	}
@@ -747,7 +752,7 @@ wormholePeer.prototype.executeRtc = function(methodName, args, uuid) {
 		self.callbackRtc(uuid, [].slice.call(arguments));
 	});
 	this.rtcFunctions[methodName].apply(self, argsWithCallback);
-};""
+};
 
 wormholePeer.prototype.callbackRtc = function(uuid, args) {
 	this.transport.send(JSON.stringify({"rtcResponse": true, data: {uuid: uuid, args: args}}));
