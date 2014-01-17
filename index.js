@@ -737,7 +737,7 @@ wormholePeer.prototype.executeRTCFunction = function(functionName, args, callbac
 			}
 		}, 30000);
 	}
-	if (this.transport.readyState == "open") {
+	if (this.transport.negotiated == true) {
 		this.transport.send(JSON.stringify({"rtc": true, data: out}));
 	} else if (out.uuid && self.uuidList[out.uuid]) {
 		self.uuidList[out.uuid].call(self, "Transport closed");
