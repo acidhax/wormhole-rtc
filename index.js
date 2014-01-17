@@ -301,7 +301,7 @@ wormholeRTC.createConnection = function (ondatachannel, onicecandidate, onaddstr
 			{ url: "stun:stun.l.google.com:19302" },
 			{ url: 'turn:ec2-54-227-128-105.compute-1.amazonaws.com:3479', username:'asdf', credential:'asdf' }
 		]
-	}, { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'SctpDataChannels': true}] });
+	}, { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true}] });
 
 	peer.ondatachannel = function (ev) {
 		ondatachannel && ondatachannel(ev);
