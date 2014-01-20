@@ -25,6 +25,11 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 	if (RTCPeerConnection || RTCSessionDescription || RTCIceCandidate) {
 		this.emit("notsupported");
 	}
+	this.on("newlistener", function (ev, cb) {
+		if (ev == "notsupported") {
+			((!RTCPeerConnection && !RTCSessionDescription && !RTCIceCandidate) == false) && cb && cb();
+		}
+	});
 
 	this.addRTCFunction("handleOffer", function (offerDescription, cb) {
 		console.log("handleOffer", this.id, offerDescription);
