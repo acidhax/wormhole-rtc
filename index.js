@@ -27,11 +27,6 @@ var wormholeRTC = function (enableWebcam, enableAudio, enableScreen) {
 			self.emit("notsupported", {});
 		}, 100);
 	}
-	this.on("newlistener", function (ev, cb) {
-		if (ev == "notsupported") {
-			((!RTCPeerConnection && !RTCSessionDescription && !RTCIceCandidate) == false) && cb && cb();
-		}
-	});
 
 	this.addRTCFunction("handleOffer", function (offerDescription, cb) {
 		console.log("handleOffer", this.id, offerDescription);
