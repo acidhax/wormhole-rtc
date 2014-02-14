@@ -508,15 +508,15 @@ wormholeRTC.prototype.removeAll = function () {
 
 wormholeRTC.prototype.handleLeave = function(id) {
 	// remove ID
-	if (this.wormholePeers[id]) {
+	// if (this.wormholePeers[id]) {
 		console.log("emitting rtcDisconnection", this.wormholePeers[id]);
 		this.emit("rtcDisconnection", this.wormholePeers[id]);
-		this.wormholePeers[id].emit("disconnected");
+		this.wormholePeers[id] && this.wormholePeers[id].emit("disconnected");
 		this.peers[id] && this.peers[id].close();
 		delete this.peers[id];
-		// delete this.wormholePeers[id];
+		delete this.wormholePeers[id];
 		delete this.peerTransports[id];	
-	}
+	// }
 };
 
 wormholeRTC.prototype.executeAll = function() {
