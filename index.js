@@ -499,6 +499,13 @@ wormholeRTC.prototype.addStream = function (stream, type) {
 	}
 };
 
+wormholeRTC.prototype.removeAll = function (id) {
+	var self = this;
+	Object.keys(this.wormholePeers).forEach(function (id) {
+		self.handleLeave(id);
+	});
+};
+
 wormholeRTC.prototype.handleLeave = function(id) {
 	// remove ID
 	if (this.wormholePeers[id]) {
