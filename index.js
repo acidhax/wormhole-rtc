@@ -409,7 +409,9 @@ wormholeRTC.createOffer = function (peer, cb) {
 			peer.setLocalDescription(desc);
 			cb(desc);
 		},
-		function() {
+		function(err) {
+			console.log("wormholeRTC.createOffer fail:", err);
+			cb(err);
 		},
 		{
 			mandatory: {
