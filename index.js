@@ -410,7 +410,7 @@ wormholeRTC.createOffer = function (peer, cb) {
 			cb(desc);
 		},
 		function() {
-		},
+		}
 	);
 };
 
