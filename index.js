@@ -411,12 +411,6 @@ wormholeRTC.createOffer = function (peer, cb) {
 		},
 		function() {
 		},
-		{
-			mandatory: {
-				OfferToReceiveAudio: true,
-				OfferToReceiveVideo: true
-			}
-		}
 	);
 };
 
