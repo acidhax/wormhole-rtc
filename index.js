@@ -144,7 +144,7 @@ wormholeRTC.joinStreams = function (origStream, streamToAdd) {
 	return origStream;
 };
 wormholeRTC.prototype.unmuteVideo = function() {
-	this.MediaConstraints.video = this._oldVideoMediaConstraints || true;
+	this.MediaConstraints.video = this.webcamEnabled;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		var vT = stream.getVideoTracks();
@@ -156,7 +156,6 @@ wormholeRTC.prototype.unmuteVideo = function() {
 	this.executeAll("enableVideo");
 };
 wormholeRTC.prototype.muteVideo = function () {
-	this._oldVideoMediaConstraints = this.MediaConstraints.video;
 	this.MediaConstraints.video = false;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
@@ -170,7 +169,7 @@ wormholeRTC.prototype.muteVideo = function () {
 };
 
 wormholeRTC.prototype.unmute = function() {
-	this.MediaConstraints.audio = this._oldAudioMediaConstraints || true;
+	this.MediaConstraints.audio = this.audioEnabled;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		var vT = stream.getAudioTracks();
@@ -182,7 +181,6 @@ wormholeRTC.prototype.unmute = function() {
 	this.executeAll("enableAudio");
 };
 wormholeRTC.prototype.mute = function() {
-	this._oldAudioMediaConstraints = this.MediaConstraints.audio;
 	this.MediaConstraints.audio = false;
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
@@ -196,6 +194,9 @@ wormholeRTC.prototype.mute = function() {
 };
 
 wormholeRTC.prototype.hasAudio = function() {
+	if (!this.MediaConstraints.audio) {
+		return false;
+	}
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		if (stream.getAudioTracks().length) {
@@ -206,6 +207,9 @@ wormholeRTC.prototype.hasAudio = function() {
 };
 
 wormholeRTC.prototype.hasVideo = function() {
+	if (!this.MediaConstraints.video) {
+		return false;
+	}
 	for (var i = 0; i < this.streams.length; i++) {
 		var stream = this.streams[i];
 		if (stream.getVideoTracks().length) {
@@ -345,10 +349,10 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 				self.wormholePeers[id].connected = true;
 				self.emit("rtcConnection", self.wormholePeers[id]);
 			}
-			if (!self.hasVideo() || !self.MediaConstraints.video) {
+			if (!self.hasVideo()) {
 				self.wormholePeers[id].rtc.disableVideo();
 			}
-			if (!self.hasAudio() || !self.MediaConstraints.audio) {
+			if (!self.hasAudio()) {
 				self.wormholePeers[id].rtc.disableAudio();
 			}
 		}
@@ -377,10 +381,10 @@ wormholeRTC.prototype.createConnection = function(id, mediaStream) {
 		if (!self.wormholePeers[id].connected) {
 			self.wormholePeers[id].connected = true;
 			self.emit("rtcConnection", self.wormholePeers[id]);
-			if ((!self.hasVideo() || !self.MediaConstraints.video) && self.wormholePeers[id].rtc.disableVideo) {
+			if (!self.hasVideo() && self.wormholePeers[id].rtc.disableVideo) {
 				self.wormholePeers[id].rtc.disableVideo();
 			}
-			if ((!self.hasAudio() || !self.MediaConstraints.audio) && self.wormholePeers[id].rtc.disableAudio) {
+			if (!self.hasAudio() && self.wormholePeers[id].rtc.disableAudio) {
 				self.wormholePeers[id].rtc.disableAudio();
 			}
 		}
